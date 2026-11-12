@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080d17" />
+  <title>Cave Explorer · Etapa 1</title>
+</head>
+  <link rel="stylesheet" href="./style.css">
+<body>
+  <div id="game" aria-label="Juego de exploración de cuevas"></div>
+  <div class="hud">
+    <div class="brand"><span class="brand-symbol">◈</span><div><b>CAVE EXPLORER</b><small>ETAPA 01 / EXPLORACIÓN</small></div></div>
+    <div class="coordinates"><span class="online-dot"></span><span id="coordinates">X 0 · Y 0</span><span class="separator">/</span><span id="chunk-count">0 chunks</span></div>
+  </div>
+  <div class="help"><strong>EXPLORAR</strong><span>W A S D / ↑ ← ↓ →</span><span class="divider"></span><span>Arrastrar con el mouse</span><span class="divider"></span><span>F: pantalla completa</span></div>
+  <div class="corner-label">MUNDO PROCEDURAL <span>·</span> SEED <span id="seed-label"></span></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
