@@ -21,3 +21,32 @@ body { background: #080d17; color: #e9f1ff; }
 #game canvas {
     cursor: crosshair !important;
 }
+
+/* ---------- Panel de herramientas ---------- */
+.tool-panel { position: fixed; top: 82px; right: 30px; z-index: 20; width: 248px; max-height: calc(100vh - 170px); display: flex; flex-direction: column; background: #0b1523ee; border: 1px solid #34506a88; border-radius: 10px; box-shadow: 0 12px 38px #0007; color: #c9d8e8; font-size: 11px; user-select: none; }
+.tool-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #34506a55; }
+.tool-header b { color: #81d9ff; font-size: 10px; letter-spacing: .16em; }
+.tool-collapse { background: none; border: 1px solid #34506a; color: #a9bfd5; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; font: inherit; line-height: 1; }
+.tool-collapse:hover { border-color: #5d8bb0; color: #e9f1ff; }
+.tool-panel.collapsed .tool-body { display: none; }
+.tool-panel.collapsed .tool-header { border-bottom: 0; }
+.tool-body { overflow-y: auto; padding: 10px 12px 12px; scrollbar-width: thin; scrollbar-color: #34506a transparent; }
+.tool-active { display: flex; gap: 10px; align-items: center; padding: 8px; background: #0d1d2f; border: 1px solid #34506a66; border-radius: 8px; }
+.tool-active b { display: block; color: #e9f1ff; font-size: 12px; }
+.tool-active small { display: block; color: #7e93ae; font-size: 10px; margin-top: 2px; line-height: 1.35; }
+.tool-swatch { flex: none; width: 22px; height: 22px; border-radius: 6px; box-shadow: inset 0 0 0 1px #ffffff30; }
+.tool-brush { display: grid; grid-template-columns: auto 1fr 38px; align-items: center; gap: 8px; margin: 10px 0 4px; color: #7e93ae; }
+.tool-brush input { width: 100%; accent-color: #5db6dc; }
+.tool-brush output { text-align: right; color: #a9bfd5; font-variant-numeric: tabular-nums; }
+.tool-groups h3 { margin: 12px 0 6px; font-size: 9px; letter-spacing: .18em; color: #7e93ae; font-weight: 650; text-transform: uppercase; }
+.tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.tool-button { display: flex; align-items: center; gap: 7px; min-width: 0; padding: 6px 7px; background: #0f1c2c; border: 1px solid #2a3f55; border-radius: 7px; color: #c9d8e8; font: inherit; font-size: 10.5px; text-align: left; cursor: pointer; }
+.tool-button span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool-button:hover { border-color: var(--tool-color); background: #13253a; }
+.tool-button.active { border-color: var(--tool-color); background: #172d45; color: #fff; box-shadow: 0 0 0 1px var(--tool-color) inset; }
+.tool-dot { flex: none; display: grid; place-items: center; width: 14px; height: 14px; border-radius: 4px; background: var(--tool-color); color: #08101b; font-size: 9px; font-weight: 800; }
+.tool-probe { display: flex; justify-content: space-between; gap: 8px; margin-top: 12px; padding: 7px 8px; background: #0d1d2f; border-radius: 7px; }
+.tool-probe .probe-label { color: #7e93ae; }
+.tool-probe b { color: #e9f1ff; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.tool-hint { margin: 8px 0 0; color: #62758c; font-size: 9.5px; text-align: center; }
+@media (max-width: 800px) { .tool-panel { top: 64px; right: 12px; width: 210px; } }

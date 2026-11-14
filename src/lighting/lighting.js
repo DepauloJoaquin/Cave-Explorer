@@ -1,3 +1,16 @@
+// =====================================================================
+// ILUMINACIÓN
+// =====================================================================
+// Un <canvas> 2D transparente encima del juego (no usa PixiJS).
+// Cada frame:
+//   1. Pinta toda la pantalla de azul muy oscuro (la oscuridad).
+//   2. Por cada luz "recorta" un agujero con un degradado radial
+//      (globalCompositeOperation = 'destination-out' borra en lugar
+//      de pintar).
+//   3. Encima suma un brillo suave del color de la luz.
+// Las luces son la del personaje y las de las partículas que emiten
+// luz (particles.js -> getFluidLights).
+// =====================================================================
 
 export class Lighting {
     constructor(gameContainer) {
@@ -22,6 +35,8 @@ export class Lighting {
         window.addEventListener('resize', () => this.resize());
     }
 
+    // Ajustar el canvas al tamaño de la ventana (respetando la
+    // densidad de píxeles de pantallas retina, máximo x2)
     resize() {
         const rect = this.canvas.getBoundingClientRect();
 
@@ -36,6 +51,7 @@ export class Lighting {
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
+    // Dibujar una luz en coordenadas de PANTALLA
     drawLight(x, y, radius, color, intensity) {
         const ctx = this.ctx;
 
@@ -93,6 +109,8 @@ export class Lighting {
         );
     }
 
+    // Se llama una vez por frame. Las luces vienen en coordenadas del
+    // MUNDO; sumando worldLayer.x/y se pasan a coordenadas de pantalla.
     update(worldLayer, lights, player) {
         const ctx = this.ctx;
 

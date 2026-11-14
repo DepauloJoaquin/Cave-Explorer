@@ -1,3 +1,16 @@
+// =====================================================================
+// ★ NÚCLEO · GENERADOR DE PILETAS (une terreno + LiquidFun)
+// =====================================================================
+// Cuando se carga un chunk, main.js le pregunta a esta clase si ese
+// chunk es el "dueño" de la cámara de su región (poolGeometry.js).
+// Si lo es, calcula una grilla de posiciones dentro de la mitad
+// inferior de la cámara y elige qué líquido poner (según poolWeight
+// de elements.js). main.js después crea esas partículas.
+//
+// Cada pileta se genera UNA sola vez (generatedChunks). Si después el
+// jugador se aleja, las partículas se guardan y se recuperan con
+// updateStreaming() en particles.js.
+// =====================================================================
 
 import {
     CHUNK_CELLS,
@@ -12,7 +25,14 @@ import {
     isInsideChamber
 } from '../terrain/poolGeometry.js';
 
-import { FLUID_TYPES } from './fluidTypes.js';
+import { ELEMENTS } from '../elements/elements.js';
+
+// Elementos que pueden aparecer en las piletas naturales
+const POOL_TYPES = Object.fromEntries(
+    ELEMENTS
+        .filter((e) => e.poolWeight)
+        .map((e) => [e.key, { weight: e.poolWeight }])
+);
 
 export class PoolGenerator {
     constructor(seed) {
@@ -20,8 +40,10 @@ export class PoolGenerator {
         this.generatedChunks = new Set();
     }
 
+    // Elegir el líquido de la región por sorteo con pesos
+    // (determinista: usa hash, siempre sale el mismo para la región)
     selectFluid(rx, ry) {
-        const entries = Object.entries(FLUID_TYPES);
+        const entries = Object.entries(POOL_TYPES);
 
         const totalWeight = entries.reduce(
             (sum, [, fluid]) => sum + fluid.weight,
@@ -61,7 +83,10 @@ export class PoolGenerator {
         return true;
     }
 
+    // Devuelve [] o una lista con una pileta:
+    // { id, type, positions:[{x,y}], bounds }
     generateForChunk(terrain, chunkX, chunkY) {
+        // Región de 3x3 chunks a la que pertenece este chunk
         const regionX = Math.floor(chunkX / 3);
         const regionY = Math.floor(chunkY / 3);
 

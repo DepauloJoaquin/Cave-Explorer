@@ -22,6 +22,15 @@ Abrir la dirección que indique Vite (normalmente `http://localhost:5173`). No a
 
 El canvas **ocupa toda la ventana** y se adapta cuando cambias el tamaño.
 
+## Elementos, temperatura y herramientas
+
+- **Panel de herramientas** (arriba a la derecha): elegí un elemento o herramienta y usalo con **click derecho** sobre la pantalla (rueda del mouse = tamaño del pincel, `T` = ocultar panel).
+- **Temperatura real** por partícula y por bloque, con conducción, calor latente y cambios de fase (agua ↔ hielo ↔ vapor, lava → basalto/obsidiana, rocas que se funden, etc.).
+- **Reacciones por contacto** basadas en química real (ácido + caliza → CO2, ácido + hierro → hidrógeno, sal + hielo → agua salada, fuego + CO2 → se apaga, hidrógeno + fuego → explosión...).
+- Lista completa de reacciones y cómo generarlas: [`REACCIONES.txt`](REACCIONES.txt).
+- Para agregar elementos: `src/elements/elements.js`; reacciones: `src/elements/reactions.js`; herramientas: `src/tools/tools.js`. El panel se arma solo.
+- Depuración: en la consola del navegador, `game.simulation.stats()` muestra cantidad y temperatura de cada elemento.
+
 ## Qué incluye esta etapa
 
 - Generación determinista por coordenadas globales (sin cortes entre chunks).
@@ -48,3 +57,7 @@ El terreno se regenera al descargar un chunk: todavía no se modifican materiale
 - `src/terrain/terrainManager.js`: carga y descarga según cámara.
 - `src/core/camera.js`: movimiento y controles.
 - `src/main.js`: configuración PixiJS y ciclo principal.
+- `src/elements/`: registro de elementos y reacciones.
+- `src/simulation/simulation.js`: temperatura, cambios de fase y reacciones.
+- `src/fluids/particles.js`: partículas de LiquidFun (líquidos, polvos y gases).
+- `src/tools/tools.js` y `src/ui/toolPanel.js`: herramientas y su panel.

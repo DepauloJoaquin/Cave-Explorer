@@ -1,0 +1,318 @@
+=====================================================================
+ CAVE EXPLORER - REACCIONES DE LOS ELEMENTOS
+=====================================================================
+
+Todas las reacciones se basan en la física y la química reales. Los
+valores (puntos de fusión, ebullición e ignición) son los reales o muy
+cercanos. Al final está la lista de simplificaciones que hace el juego.
+
+
+---------------------------------------------------------------------
+ 1. CÓMO SE USA
+---------------------------------------------------------------------
+
+ - Panel HERRAMIENTAS (arriba a la derecha): elegí una herramienta o un
+   elemento.
+ - CLICK DERECHO sobre la pantalla: usa la herramienta elegida justo
+   sobre el cursor. Si lo mantenés apretado, sigue aplicándola.
+ - RUEDA DEL MOUSE o el control "Pincel": cambia el tamaño del área.
+ - CLICK IZQUIERDO: excavar el terreno (como antes).
+ - T: mostrar u ocultar el panel.
+ - P: tirar una pileta de agua sobre el personaje.
+ - "Bajo el cursor" (abajo del panel): muestra qué material hay bajo el
+   mouse y su temperatura. Sirve para ver cuánto falta para que algo
+   cambie de estado.
+
+ Herramientas generales:
+   Calor      sube +900 °C por segundo todo lo que está bajo el pincel.
+   Frío       baja -400 °C por segundo (mínimo -273 °C, el cero absoluto).
+   Borrar     elimina partículas y terreno.
+   Explosión  una explosión por click: rompe terreno, empuja partículas y
+              calienta la zona (puede prender fuego cosas cercanas).
+
+ Elementos: cada elemento tiene su botón. Los líquidos, polvos y gases
+ se generan como partículas y los sólidos se pintan como bloques.
+
+
+---------------------------------------------------------------------
+ 2. CÓMO FUNCIONA LA TEMPERATURA
+---------------------------------------------------------------------
+
+ - Cada partícula y cada bloque del terreno tiene su temperatura.
+ - El ambiente de la cueva está a 20 °C. Todo tiende de a poco a esa
+   temperatura.
+ - Los materiales que se tocan intercambian calor. Cuánto calor pasa
+   depende de la conductividad (el hierro conduce mucho y la madera
+   poco) y de la capacidad calorífica (el agua tarda mucho en
+   calentarse, por eso enfría la lava tan bien).
+ - CALOR LATENTE: al llegar al punto de cambio, el material se queda en
+   esa temperatura hasta absorber (o perder) el calor extra que
+   necesita para cambiar. Por ejemplo, el hielo se queda en 0 °C
+   mientras se derrite, igual que en la vida real.
+ - Los bloques a más de 450 °C se ven al rojo vivo, y la lava, los
+   metales fundidos y el fuego cambian de color según su temperatura.
+
+
+---------------------------------------------------------------------
+ 3. CAMBIOS DE ESTADO POR TEMPERATURA
+---------------------------------------------------------------------
+
+ Formato:  ELEMENTO  ->  RESULTADO  (temperatura)
+           Base real.
+           Cómo generarlo en el juego.
+
+ AGUA
+   Agua -> Hielo  (0 °C o menos)
+     El agua pura se congela a 0 °C.
+     Cómo: elegí Agua, tirá un charco con click derecho, cambiá a Frío y
+     mantené click derecho encima del agua.
+
+   Agua -> Vapor  (100 °C o más)
+     El agua hierve a 100 °C a presión atmosférica.
+     Cómo: herramienta Calor sobre el agua. También pasa si el agua toca
+     lava, metal fundido o roca al rojo.
+
+   Hielo -> Agua  (más de 0 °C)
+     El hielo se funde a 0 °C, absorbiendo calor latente.
+     Cómo: elegí Hielo y pintalo. Se derrite solo de a poco con los 20 °C
+     de la cueva, o rápido con Calor, fuego o lava.
+
+   Vapor -> Agua  (menos de 100 °C)
+     El vapor se condensa al enfriarse.
+     Cómo: hervir agua con Calor. El vapor sube, se enfría contra el techo
+     y vuelve a caer como gotas (un ciclo de lluvia).
+
+   El ciclo completo que pediste se ve así: Hielo + Calor -> Agua ->
+   Vapor, y Vapor + Frío -> Agua -> Hielo.
+
+ AGUA SALADA
+   Agua salada -> Hielo + Sal  (-21 °C o menos)
+     La salmuera saturada se congela recién a unos -21 °C (descenso
+     crioscópico). Al congelarse, el hielo expulsa la sal.
+     Cómo: Frío sobre agua salada. Tarda más que el agua común.
+
+   Agua salada -> Vapor + Sal  (101 °C o más)
+     Al evaporarse, el agua se va y la sal queda como residuo. Así se
+     obtiene sal en las salinas.
+     Cómo: Calor sobre agua salada. Van apareciendo granos de sal.
+
+ LAVA
+   Lava -> Basalto  (menos de 700 °C)
+     La lava basáltica (que sale a unos 1100-1200 °C) se solidifica entre
+     700 y 1000 °C. Si se enfría despacio, forma basalto.
+     Cómo: elegí Lava, tirala y esperá. Se enfría contra la roca fría, y
+     con Frío es más rápido.
+
+ ROCAS Y MINERALES
+   Roca caliza -> Lava  (1200 °C)
+   Granito -> Lava  (1260 °C)
+   Basalto -> Lava  (1200 °C)
+   Obsidiana -> Lava  (1100 °C)
+     Las rocas se funden en ese rango y forman magma. La lava (1150 °C)
+     no llega a fundir la roca de la cueva, pero sí puede volver a fundir
+     la obsidiana. Esto también es así en la vida real.
+     Cómo: herramienta Calor mantenida sobre una pared.
+
+   Veta de hierro / Hierro -> Hierro fundido  (1538 °C)
+     El hierro funde a 1538 °C.
+     Cómo: Calor sobre una veta (los puntos claros de la roca) o sobre
+     bloques de Hierro.
+
+   Hierro fundido -> Hierro  (menos de 1538 °C)
+     Cómo: elegí Hierro fundido y tiralo. Se solidifica en bloques casi
+     enseguida.
+
+   Cuarzo -> Vidrio fundido  (1713 °C)
+     El cuarzo (SiO2) funde a 1713 °C. Al enfriarse no vuelve a
+     cristalizar: queda como vidrio de sílice.
+     Cómo: Calor sobre los cristales celestes de la cueva.
+
+   Arena -> Vidrio fundido  (1700 °C)
+     La arena de cuarzo fundida es el origen del vidrio.
+     Cómo: elegí Arena, tirala y aplicá Calor un buen rato.
+
+   Vidrio -> Vidrio fundido  (1400 °C)
+   Vidrio fundido -> Vidrio  (menos de 900 °C)
+     El vidrio común fluye entre 1000 y 1400 °C y se pone rígido al
+     enfriarse.
+     Cómo: Calor sobre un bloque de Vidrio. Después dejalo enfriar o usá
+     Frío.
+
+ MADERA
+   Madera -> Fuego + Humo + Ceniza  (300 °C)
+     La madera se enciende sola a unos 300 °C, y al quemarse deja humo y
+     ceniza.
+     Cómo: pintá Madera y acercale Fuego, Lava o Calor.
+
+ PETRÓLEO
+   Petróleo -> Fuego + Humo  (260 °C)
+     El crudo se enciende solo entre 250 y 300 °C, aunque no haya llama.
+     Cómo: tirá Petróleo y acercale Fuego o Lava, o aplicale Calor.
+
+ HIDRÓGENO
+   Hidrógeno -> EXPLOSIÓN: Fuego + Vapor de agua  (585 °C)
+     El hidrógeno se enciende solo a unos 585 °C, y con una llama
+     explota al instante. Al quemarse forma agua: 2H2 + O2 -> 2H2O.
+     Cómo: generá Hidrógeno y acercale Fuego, Lava o Calor. Rompe un
+     poco el terreno y empuja todo.
+
+ DIÓXIDO DE CARBONO
+   CO2 -> Hielo seco  (-78,5 °C)
+   Hielo seco -> CO2  (más de -78,5 °C)
+     El CO2 no pasa por el estado líquido a presión normal: se sublima,
+     o sea, pasa de sólido a gas directamente a -78,5 °C.
+     Cómo: Frío sobre CO2 para hacer hielo seco. El bloque de Hielo seco
+     aparece a -90 °C y suelta CO2 mientras se calienta. Además, congela
+     el agua que lo toca.
+
+ ÁCIDO CLORHÍDRICO
+   Ácido -> Gas ácido (HCl)  (110 °C)
+     El ácido clorhídrico concentrado hierve cerca de 110 °C y libera HCl
+     gaseoso.
+     Cómo: Calor sobre el Ácido, o que el ácido toque lava.
+
+
+---------------------------------------------------------------------
+ 4. REACCIONES POR CONTACTO
+---------------------------------------------------------------------
+
+ LAVA Y METALES FUNDIDOS CON AGUA (enfriamiento brusco)
+   Lava + Agua -> Obsidiana + Vapor
+     Cuando la lava se enfría de golpe, no llega a cristalizar y queda
+     como vidrio volcánico (obsidiana). El agua hierve al instante.
+     Cómo: tirá Lava sobre Agua, o Agua sobre Lava.
+
+   Lava + Agua salada -> Obsidiana + Vapor + Sal
+     Cómo: igual que antes, pero usando Agua salada.
+
+   Hierro fundido + Agua -> Hierro + Vapor
+     Es el templado del hierro.
+     Cómo: tirá Hierro fundido sobre Agua.
+
+   Vidrio fundido + Agua -> Vidrio + Vapor
+     Cómo: tirá Vidrio fundido sobre Agua.
+
+ ÁCIDO CLORHÍDRICO (HCl)
+   Ácido + Roca caliza -> se disuelve la roca + CO2
+     CaCO3 + 2HCl -> CaCl2 + H2O + CO2. El ácido se va gastando.
+     Es la misma química que forma las cuevas reales.
+     Cómo: tirá Ácido contra una pared. Las piletas de ácido de la cueva
+     se van comiendo sus propias paredes.
+
+   Ácido + Veta de hierro / Hierro -> se disuelve el metal + Hidrógeno
+     Fe + 2HCl -> FeCl2 + H2. Ojo: el hidrógeno que sale es inflamable.
+     Cómo: tirá Ácido sobre bloques de Hierro y después acercá Fuego al
+     gas que sube.
+
+   Ácido + Basalto -> se disuelve (lento)
+   Ácido + Granito -> se disuelve (muy lento)
+     Las rocas de silicato resisten mucho más al HCl que la caliza.
+
+   Ácido + Madera -> se degrada (lento)
+
+   Ácido + Hielo -> Agua
+     El ácido baja el punto de fusión del hielo.
+     Cómo: tirá Ácido sobre un bloque de Hielo.
+
+   Ácido + Agua -> se diluye (pasa a agua) y libera calor
+     La dilución de un ácido fuerte es exotérmica.
+     Cómo: mezclá Ácido con Agua y mirá la temperatura en "Bajo el
+     cursor".
+
+   Gas ácido + Agua (o Vapor) -> Ácido
+     El HCl gaseoso es muy soluble en agua y vuelve a formar ácido
+     clorhídrico.
+     Cómo: hacé hervir ácido con Calor y dejá que el gas toque agua.
+
+   El ácido NO ataca: cuarzo, vidrio, obsidiana, arena ni sal.
+     El cuarzo y el vidrio (sílice) resisten el HCl; solo los disuelve
+     el ácido fluorhídrico.
+
+ SAL
+   Sal + Agua -> Agua salada
+     La sal se disuelve en el agua.
+     Cómo: tirá Sal sobre Agua.
+
+   Sal + Hielo -> Agua salada
+     Es la sal que se tira en las rutas: baja el punto de congelación y
+     derrite el hielo aunque esté por debajo de 0 °C.
+     Cómo: pintá Hielo y tirale Sal encima.
+
+   Sal + Vapor -> Agua salada (la sal absorbe la humedad)
+
+ FUEGO
+   Fuego + Agua -> se apaga (el agua se calienta y puede hervir)
+     El agua absorbe el calor de la llama.
+     Cómo: generá Fuego y tirale Agua encima.
+
+   Fuego + CO2 -> se apaga
+     El CO2 desplaza al oxígeno. Así funcionan los matafuegos de CO2.
+     Cómo: generá Fuego y soltá CO2 encima. El CO2 es más pesado que el
+     aire, así que cae sobre la llama.
+
+   Fuego + Petróleo -> el petróleo se prende (más humo)
+   Fuego + Madera -> la madera se prende (humo y ceniza)
+   Fuego + Hidrógeno -> EXPLOSIÓN (fuego + vapor de agua)
+   Lava + Hidrógeno -> EXPLOSIÓN
+   Fuego + Hielo -> el hielo se derrite y la llama se apaga
+
+   El fuego sin combustible dura menos de un segundo y se convierte en
+   humo. El humo sube y se disipa en unos segundos.
+
+
+---------------------------------------------------------------------
+ 5. CÓMO SE MUEVE CADA COSA
+---------------------------------------------------------------------
+
+ Líquidos   caen y fluyen: agua, agua salada, ácido, lava, petróleo,
+            hierro fundido y vidrio fundido. Los viscosos (lava,
+            petróleo y fundidos) fluyen más lento.
+ Petróleo   flota sobre el agua, porque es menos denso.
+ Polvos     caen y se apilan: arena, ceniza y sal.
+ Gases      según su densidad comparada con la del aire:
+              Hidrógeno  sube muy rápido (es 14 veces más liviano que el aire).
+              Fuego      sube rápido (aire muy caliente).
+              Vapor      sube.
+              Humo       sube.
+              CO2        BAJA y se acumula en el piso (es 1,5 veces más
+                         pesado que el aire).
+              Gas ácido  BAJA despacio (el HCl es 1,3 veces más pesado
+                         que el aire).
+
+
+---------------------------------------------------------------------
+ 6. SIMPLIFICACIONES RESPECTO DE LA VIDA REAL
+---------------------------------------------------------------------
+
+ - Para que el juego sea jugable, el calor latente de ebullición del agua
+   está reducido a un poco más de la mitad del real (300 en vez de 540
+   "grados equivalentes"). Hervir agua real lleva más tiempo.
+ - No se simula el oxígeno: el fuego siempre tiene aire disponible,
+   salvo cuando lo apagan el CO2 o el agua.
+ - Cuando la veta de hierro se funde, da hierro puro. En la realidad, el
+   mineral necesita carbón (fundición) para dar hierro metálico.
+ - El ácido no tiene concentración: cada partícula es ácido "fuerte"
+   hasta que se gasta o se diluye.
+ - Los líquidos y los gases están en dos sistemas físicos distintos: el
+   vapor atraviesa el agua al subir, en lugar de formar burbujas.
+ - Las temperaturas son a presión atmosférica normal.
+
+
+---------------------------------------------------------------------
+ 7. CÓMO AGREGAR ELEMENTOS, REACCIONES O HERRAMIENTAS NUEVAS
+---------------------------------------------------------------------
+
+ ELEMENTO NUEVO -> src/elements/elements.js
+   Copiá un bloque define({...}) y cambiale el id (tiene que ser libre),
+   la key, el nombre, el estado, el color y sus temperaturas de cambio
+   (above / below). Aparece solo en el panel de herramientas, y si le
+   ponés poolWeight también aparece en las piletas naturales.
+
+ REACCIÓN NUEVA -> src/elements/reactions.js
+   Agregá una línea, por ejemplo:
+     { a: 'lava', b: 'sand', rate: 1, bTo: 'molten_glass' }
+
+ HERRAMIENTA NUEVA -> src/tools/tools.js
+   Usá registerTool({ id, name, group, color, icon, description,
+   apply({ x, y, radius, dt, sim, terrain }) { ... } }).
+   El panel la muestra sola.

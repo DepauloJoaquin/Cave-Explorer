@@ -1,3 +1,13 @@
+// =====================================================================
+// JUGADOR
+// =====================================================================
+// El personaje NO usa LiquidFun: tiene su propia física simple contra
+// la grilla de celdas (más fácil de controlar que un cuerpo de Box2D).
+//   - Gravedad + propulsor (W / espacio) para "volar" por la cueva.
+//   - Colisión: antes de moverse revisa si su rectángulo tocaría
+//     alguna celda sólida (terrain.getCell). Se mueve de a pasos de
+//     3 px por eje para no atravesar paredes finas.
+// =====================================================================
 
 import { Graphics } from 'pixi.js';
 import { CELL_SIZE, MATERIAL } from '../terrain/config.js';
@@ -8,20 +18,24 @@ export class Player {
     this.y = y;
     this.terrain = terrain;
 
+    // Tamaño del rectángulo de colisión (px)
     this.width = 16;
     this.height = 24;
 
+    // Velocidad actual (px/s)
     this.vx = 0;
     this.vy = 0;
 
-    this.speed = 180;
-    this.gravity = 650;
-    this.hoverForce = 1050;
+    this.speed = 180;        // velocidad horizontal
+    this.gravity = 650;      // aceleración hacia abajo
+    this.hoverForce = 1050;  // empuje hacia arriba del propulsor
     this.maxFallSpeed = 450;
     this.maxRiseSpeed = 180;
 
+    // Teclas apretadas en este momento
     this.keys = new Set();
 
+    // Dibujo: cuerpo amarillo + visor
     this.graphic = new Graphics();
     this.graphic
       .roundRect(-8, -12, 16, 24, 4)
@@ -48,6 +62,7 @@ export class Player {
     });
   }
 
+  // ¿Hay terreno sólido en este punto (px)?
   isSolidAt(x, y) {
     const cellX = Math.floor(x / CELL_SIZE);
     const cellY = Math.floor(y / CELL_SIZE);
@@ -55,6 +70,8 @@ export class Player {
     return this.terrain.getCell(cellX, cellY) !== MATERIAL.EMPTY;
   }
 
+  // ¿El rectángulo del jugador, centrado en (x, y), toca alguna celda
+  // sólida? Recorre todas las celdas que cubre el rectángulo.
   collidesAt(x, y) {
     const halfW = this.width / 2;
     const halfH = this.height / 2;
@@ -76,6 +93,8 @@ export class Player {
     return false;
   }
 
+  // Moverse `amount` px en un eje, de a pasitos de 3 px. Si un paso
+  // choca, se frena en ese eje y se queda en la última posición libre.
   moveAxis(amount, axis) {
     const steps = Math.ceil(Math.abs(amount) / 3);
     if (steps === 0) return;
@@ -97,6 +116,7 @@ export class Player {
     }
   }
 
+  // Se llama una vez por frame desde main.js
   update(dt) {
     const left = this.keys.has('a') || this.keys.has('arrowleft');
     const right = this.keys.has('d') || this.keys.has('arrowright');
@@ -123,6 +143,8 @@ export class Player {
       Math.min(this.vy, this.maxFallSpeed)
     );
 
+    // Mover primero en X y después en Y: así se puede deslizar
+    // contra una pared en lugar de quedar trabado
     this.moveAxis(this.vx * dt, 'x');
     this.moveAxis(this.vy * dt, 'y');
 
