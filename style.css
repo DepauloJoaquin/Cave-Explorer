@@ -13,10 +13,11 @@ body { background: #080d17; color: #e9f1ff; }
 .coordinates { display: flex; align-items: center; gap: 10px; background: #0d1725d9; border: 1px solid #34506a88; border-radius: 9px; padding: 11px 14px; color: #adc4da; font-size: 11px; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
 .online-dot { background: #72d7ab; box-shadow: 0 0 10px #72d7ab; width: 6px; height: 6px; border-radius: 100%; }
 .separator { color: #526477; }
-.help { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 13px 18px; border: 1px solid #34506a88; background: #0b1523e8; border-radius: 10px; color: #a9bfd5; font-size: 11px; white-space: nowrap; box-shadow: 0 12px 38px #0006; pointer-events: none; }
-.help strong { color: #81d9ff; font-size: 10px; letter-spacing: .14em; }.help .divider { background: #405065; width: 1px; height: 13px; }
+.help { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 13px 18px; /* Fondo más sólido y contraste mejorado */ background: rgba(12, 24, 42, 0.97); color: #f0f7ff; border: 1px solid rgba(125, 205, 255, 0.65); border-radius: 10px; font-size: 11px; font-weight: 500; white-space: nowrap; /* Iluminación suave azul */ box-shadow: 0 0 20px rgba(72, 172, 255, 0.30), 0 0 40px rgba(72, 172, 255, 0.10), 0 12px 38px rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); z-index: 30; pointer-events: none; }
+
+.help strong { color: #94e2ff; font-size: 10px; font-weight: 750; letter-spacing: 0.14em; text-shadow: 0 0 10px rgba(100, 205, 255, 0.55); }
 .corner-label { position: fixed; bottom: 25px; right: 30px; letter-spacing: .12em; font-size: 9px; color: #8190a4; pointer-events: none; }.corner-label span { color: #5db6dc; }
-@media (max-width: 800px) { .hud { padding: 15px; }.coordinates { font-size: 10px; padding: 8px; }.brand b { font-size: 11px; }.brand small { font-size: 8px; }.help { bottom: 18px; gap: 8px; padding: 10px 12px; font-size: 10px; }.help .divider:nth-of-type(2),.help span:last-child { display: none; }.corner-label { display: none; } }
+@media (max-width: 800px) { .hud { padding: 15px; }.coordinates { font-size: 10px; padding: 8px; }.brand b { font-size: 11px; }.brand small { font-size: 8px; }.help { bottom: 18px; gap: 8px; padding: 10px 12px; font-size: 10px; }.help .divider { background: rgba(155, 210, 255, 0.55); width: 1px; height: 13px; }
 #game,
 #game canvas {
     cursor: crosshair !important;
