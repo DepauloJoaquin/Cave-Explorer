@@ -40,6 +40,8 @@ import { Player } from './player/player.js';
 import { world } from './physics/world.js';
 import { Lighting } from './lighting/lighting.js';
 
+import { Benchmark } from './debug/benchmark.js';
+
 import {
     particleContainer,
     liquidGraphics,
@@ -48,7 +50,8 @@ import {
     renderParticles,
     applyGasForces,
     updateStreaming,
-    getFluidLights
+    getFluidLights,
+    getParticleCount
 } from './fluids/particles.js';
 
 import { setupMetaballs } from './fluids/metaballs.js';
@@ -104,6 +107,11 @@ const simulation = new Simulation(terrain);
 // JUGADOR
 
 const player = new Player(0, 0, terrain);
+
+const benchmark = new Benchmark();
+
+// Conectar el profiler
+simulation.benchmark = benchmark;
 
 // Capa de partículas
 worldLayer.addChild(particleContainer);
@@ -173,21 +181,26 @@ function updateScene(dt) {
   const height = app.screen.height;
 
   // Generación procedural (las piletas solo en chunks nuevos)
-  const created = terrain.update(
-    camera.x,
-    camera.y,
-    width,
-    height
-  );
+    const created = benchmark.measure('Terreno procedural', () => {
+      return terrain.update(
+          camera.x,
+          camera.y,
+          width,
+          height
+      );
+  });
 
-  generatePools(created);
+  benchmark.measure('Generacion de piletas', () => { generatePools(created); });
 
   // Guardar o recuperar partículas fuera de la zona cargada
   streamingInterval += dt;
   if (streamingInterval > 0.25) {
-    updateStreaming(terrain);
+    benchmark.measure('Streaming de fluidos', () => {
+        updateStreaming(terrain);
+    });
+
     streamingInterval = 0;
-  }
+}
 
   // Desplazamiento visual del mundo
   camera.apply(worldLayer, width, height);
@@ -227,52 +240,197 @@ const particleIterations =
 let accumulator = 0;
 let stepCount = 0;
 
+let physicsStepsTotal = 0;
+let physicsFrames = 0;
+let physicsMaxSteps = 0;
+let physicsReportTime = performance.now();
+
+
+let physicsTimeTotal = 0;
+let physicsStepTotal = 0;
+let physicsReportStart = performance.now();
+
 app.ticker.add((ticker) => {
 
-    // Segundos desde el frame anterior (máximo 0.05 para que un
-    // tirón no haga explotar la física)
+    // Tiempo del frame
     const dt = Math.min(ticker.deltaMS / 1000, 0.05);
 
     accumulator += dt;
 
-    // Física de LiquidFun
+    let physicsSteps = 0;
+
+    // -------------------------------------
+    // FÍSICA A PASO FIJO
+    // -------------------------------------
+
     while (accumulator >= FIXED_DT) {
-        // Colisiones al día con el terreno modificado
-        terrain.syncPhysics();
 
-        // Empuje de los gases (escribe velocidades antes del paso)
-        applyGasForces(FIXED_DT);
+        physicsSteps++;
 
-        // ★ Avanzar la simulación: Step(dt, iteraciones de velocidad,
-        //   iteraciones de posición, iteraciones de partículas)
-        world.Step(
-            FIXED_DT,
-            8,
-            3,
-            particleIterations
-        );
+        // Reconstrucción de colisiones del terreno
+        benchmark.measure('Colisiones del terreno', () => {
+            terrain.syncPhysics();
+        });
+
+        // Simulación de gases
+        benchmark.measure('Fuerzas de gases', () => {
+            applyGasForces(FIXED_DT);
+        });
+
+       const physicsStart = performance.now();
+
+        benchmark.measure('LiquidFun', () => {
+            world.Step(
+                FIXED_DT,
+                8,
+                3,
+                particleIterations
+            );
+        });
+
+        physicsTimeTotal += performance.now() - physicsStart;
+        physicsStepTotal++;
 
         // Temperatura y reacciones a 30 Hz
         stepCount++;
+
         if (stepCount % 2 === 0) {
-            simulation.tick(FIXED_DT * 2);
+            benchmark.measure('Temperatura y reacciones', () => {
+                simulation.tick(FIXED_DT * 2);
+            });
         }
 
         accumulator -= FIXED_DT;
     }
 
-    // Actualización visual y del personaje
-    updateScene(dt);
-    useTool(dt);
-    digTerrain();
-    terrain.flushTextures();
-    renderParticles();
+
+
+    if (performance.now() - physicsReportStart >= 5000) {
+
+    console.table({
+    'Pasos promedio por frame':
+        physicsFrames > 0
+            ? (physicsStepsTotal / physicsFrames).toFixed(2)
+            : '0.00',
+
+    'Máximo de pasos por frame': physicsMaxSteps,
+    'Frames analizados': physicsFrames,
+
+    'Celdas termicas activas':
+        terrain.cellTemp.size,
+
+    'Celdas termicas procesadas':
+        simulation.lastThermalCellCount ?? 0,
+
+    'Consultas a vecinos':
+        simulation.lastNeighborChecks ?? 0,
+
+    'Celdas termicas omitidas':
+        simulation.lastSkippedThermalCells ?? 0,
+
+    // NUEVAS MÉTRICAS
+    'Celdas termicas vacias':
+        simulation.lastEmptyThermalCells ?? 0,
+
+    'Celdas termicas descargadas':
+        simulation.lastUnloadedThermalCells ?? 0
+});
+
+    physicsTimeTotal = 0;
+    physicsStepTotal = 0;
+    physicsReportStart = performance.now();
+}
+
+
+
+
+    physicsStepsTotal += physicsSteps;
+    physicsFrames++;
+
+    physicsMaxSteps = Math.max(
+        physicsMaxSteps,
+        physicsSteps
+    );
+
+    const now = performance.now();
+
+    if (now - physicsReportTime >= 5000) {
+
+        console.table({
+            'Pasos promedio por frame': (
+                physicsStepsTotal / physicsFrames
+            ).toFixed(2),
+
+            'Máximo de pasos por frame': physicsMaxSteps,
+
+            'Frames analizados': physicsFrames
+        });
+
+        physicsStepsTotal = 0;
+        physicsFrames = 0;
+        physicsMaxSteps = 0;
+        physicsReportTime = now;
+    }
+
+    // -------------------------------------
+    // ACTUALIZACIÓN DEL MUNDO
+    // -------------------------------------
+
+    benchmark.measure('Escena y jugador', () => {
+        updateScene(dt);
+    });
+
+    // Herramientas
+    benchmark.measure('Herramientas', () => {
+        useTool(dt);
+        digTerrain();
+    });
+
+    // Actualizar texturas modificadas
+    benchmark.measure('Texturas del terreno', () => {
+        terrain.flushTextures();
+    });
+
+    // Dibujar partículas
+    benchmark.measure('Graficos de fluidos', () => {
+        renderParticles();
+    });
+
+    // Dibujar indicador del pincel
     drawBrush();
 
-    const lights = getFluidLights( player.x, player.y );
+    // -------------------------------------
+    // ILUMINACIÓN
+    // -------------------------------------
 
-    lighting.update( worldLayer, lights, player );
+    benchmark.measure('Iluminacion', () => {
+
+        const lights = getFluidLights(
+            player.x,
+            player.y
+        );
+
+        lighting.update(
+            worldLayer,
+            lights,
+            player
+        );
+    });
+
+    // -------------------------------------
+    // REGISTRAR MÉTRICAS
+    // -------------------------------------
+
+    // Contar partículas de los sistemas de LiquidFun
+    
+
+      benchmark.recordFrame(
+      ticker.elapsedMS,
+      getParticleCount(),
+      terrain.count
+    );
 });
+
 
 
 

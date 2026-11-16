@@ -65,6 +65,70 @@ export function cellFromKey(key) {
   return [cx, cy];
 }
 
+
+class IndexedTemperatureMap extends Map {
+
+    constructor() {
+        super();
+        this.byChunk = new Map();
+    }
+
+    getChunkId(key) {
+        const [cellX, cellY] = cellFromKey(key);
+
+        const cx = Math.floor(cellX / CHUNK_CELLS);
+        const cy = Math.floor(cellY / CHUNK_CELLS);
+
+        return chunkId(cx, cy);
+    }
+
+      set(key, value) {
+
+      // Si la celda ya está indexada, solo actualizar su temperatura
+      if (super.has(key)) {
+          return super.set(key, value);
+      }
+
+      const id = this.getChunkId(key);
+
+      let bucket = this.byChunk.get(id);
+
+      if (!bucket) {
+          bucket = new Set();
+          this.byChunk.set(id, bucket);
+      }
+
+      bucket.add(key);
+
+      return super.set(key, value);
+  }
+
+    delete(key) {
+        if (!this.has(key)) {
+            return false;
+        }
+
+        const id = this.getChunkId(key);
+        const bucket = this.byChunk.get(id);
+
+        if (bucket) {
+            bucket.delete(key);
+
+            if (bucket.size === 0) {
+                this.byChunk.delete(id);
+            }
+        }
+
+        return super.delete(key);
+    }
+
+    clear() {
+        super.clear();
+        this.byChunk.clear();
+    }
+}
+
+
 export class TerrainManager {
   constructor(seed) {
     this.seed = seed;
@@ -83,7 +147,7 @@ export class TerrainManager {
     this.textureDirtyChunks = new Set();
 
     // Temperatura de las celdas que no están a temperatura ambiente
-    this.cellTemp = new Map();    // cellKey -> °C
+    this.cellTemp = new IndexedTemperatureMap();   // cellKey -> °C
     this.cellLatent = new Map();  // cellKey -> progreso del cambio de fase (0-1)
     this.glowing = new Set();     // celdas dibujadas incandescentes
   }

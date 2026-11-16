@@ -29,7 +29,7 @@ import {
     RADIUS_PX
 } from '../fluids/particles.js';
 import { CELL_SIZE, MATERIAL } from '../terrain/config.js';
-import { cellKey, cellFromKey } from '../terrain/terrainManager.js';
+import { cellKey, cellFromKey ,chunkId} from '../terrain/terrainManager.js';
 
 const CONTACT = RADIUS_PX * 2 + 1;
 const CONTACT2 = CONTACT * CONTACT;
@@ -97,6 +97,10 @@ export class Simulation {
         this.explosions = [];
         this.grid = new Map();
         this.spawnCarry = 0;
+        this.cellValues = new Float64Array(1024);
+        this.useOptimizedBuffer = true;
+        this.lastThermalCellCount = 0;
+        this.lastNeighborChecks = 0;
         this.ensure(4096);
     }
 
@@ -115,6 +119,9 @@ export class Simulation {
         this.I = new Int32Array(c);
         this.FL = new Uint8Array(c);
         this.NEXT = new Int32Array(c);
+        this.GX = new Int32Array(c);
+        this.GY = new Int32Array(c);
+
         this.capacity = c;
     }
 
@@ -130,7 +137,7 @@ export class Simulation {
 
         this.ensure(views[0].count + views[1].count);
 
-        const { X, Y, T, D, L, NT, E, NE, S, I, FL, NEXT } = this;
+        const { X, Y, T, D, L, NT, E, NE, S, I, FL, NEXT, GX, GY } = this;
 
         // 1. Leer partículas
         let n = 0;
@@ -163,29 +170,50 @@ export class Simulation {
         grid.clear();
 
         for (let k = 0; k < n; k++) {
-            const key = gridKey(Math.floor(X[k] / GRID), Math.floor(Y[k] / GRID));
-            const head = grid.get(key);
-            NEXT[k] = head === undefined ? -1 : head;
-            grid.set(key, k);
+        const gx = Math.floor(X[k] / GRID);
+        const gy = Math.floor(Y[k] / GRID);
+
+        GX[k] = gx;
+        GY[k] = gy;
+
+        const key = gridKey(gx, gy);
+
+        const head = grid.get(key);
+
+        NEXT[k] = head === undefined ? -1 : head;
+        grid.set(key, k);
         }
 
-        // 3. Partícula - partícula
-        for (let k = 0; k < n; k++) {
-            const gx = Math.floor(X[k] / GRID);
-            const gy = Math.floor(Y[k] / GRID);
+        
+ // 3. Partícula - partícula
+    this.benchmark.measure('Sim - Particulas', () => {
 
-            for (let dy = -1; dy <= 1; dy++) {
-                for (let dx = -1; dx <= 1; dx++) {
-                    let j = grid.get(gridKey(gx + dx, gy + dy));
-                    if (j === undefined) continue;
+    for (let k = 0; k < n; k++) {
 
-                    while (j !== -1) {
-                        if (j > k) this.pair(k, j, dt);
-                        j = NEXT[j];
+        const gx = GX[k];
+        const gy = GY[k];
+
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+
+                let j = grid.get(
+                    gridKey(gx + dx, gy + dy)
+                );
+
+                if (j === undefined) continue;
+
+                while (j !== -1) {
+                    if (j > k) {
+                        this.pair(k, j, dt);
                     }
+
+                    j = NEXT[j];
                 }
             }
         }
+    }
+});
+
 
         // 4. Partícula - celda
         for (let k = 0; k < n; k++) {
@@ -350,7 +378,9 @@ export class Simulation {
         }
 
         // 7. Calor de las celdas
+        this.benchmark.measure('Sim - Terreno termico', () => {
         this.updateCells(dt);
+        });
 
         // 8. Partículas nuevas y explosiones
         this.flushSpawns();
@@ -505,124 +535,314 @@ export class Simulation {
     // CALOR EN EL TERRENO
     // =================================================================
 
-    updateCells(dt) {
-        const terrain = this.terrain;
-        const temps = terrain.cellTemp;
+   
+updateCells(dt) {
 
-        if (temps.size === 0 && terrain.glowing.size === 0) return;
+    const terrain = this.terrain;
+    const temps = terrain.cellTemp;
 
-        const keys = Array.from(temps.keys());
-        const values = new Float64Array(keys.length);
-        const adds = new Map();
+    // Reiniciar métricas de este tick térmico
+    this.lastThermalCellCount = 0;
+    this.lastNeighborChecks = 0;
+    this.lastSkippedThermalCells = 0; // NUEVO
+    this.lastEmptyThermalCells = 0;
+    this.lastUnloadedThermalCells = 0;
 
-        // Difusión
-        for (let idx = 0; idx < keys.length; idx++) {
-            const key = keys[idx];
-            const tc = temps.get(key);
-            const [cx, cy] = cellFromKey(key);
-            const mat = terrain.getLoadedCell(cx, cy);
+    if (temps.size === 0 && terrain.glowing.size === 0) {
+        return;
+    }
 
-            if (mat <= 0) {
-                values[idx] = NaN;
-                continue;
-            }
+    // -------------------------------------
+    // PREPARACIÓN DE DATOS
+    // -------------------------------------
 
-            const ec = byId[mat];
-            let d = (AMBIENT - tc) * Math.min(1, CELL_AMBIENT * dt);
+    
+    const keys = [];
 
-            for (const [dx, dy] of NEIGHBORS4) {
-                const nm = terrain.getLoadedCell(cx + dx, cy + dy);
-                if (nm <= 0) continue;
+    // Recorrer solo los chunks actualmente cargados
+    for (const chunk of terrain.chunkIndex.values()) {
 
-                const en = byId[nm];
-                const nk = cellKey(cx + dx, cy + dy);
-                const tn = temps.get(nk) ?? AMBIENT;
-                const diff = tn - tc;
+        const id = chunkId(
+            chunk.chunkX,
+            chunk.chunkY
+        );
 
-                if (diff < 0.3 && diff > -0.3) continue;
+        const bucket = temps.byChunk.get(id);
 
-                let f = K_CC * Math.min(ec.cond, en.cond) * dt;
-                if (f > 0.12) f = 0.12;
-
-                d += f * diff;
-
-                if (!temps.has(nk)) {
-                    adds.set(nk, (adds.get(nk) ?? 0) - f * diff * ec.cap / en.cap);
-                }
-            }
-
-            values[idx] = tc + d;
+        if (!bucket) {
+            continue;
         }
 
-        for (const [nk, delta] of adds) {
-            if (Math.abs(delta) > 0.3) temps.set(nk, AMBIENT + delta);
+        for (const key of bucket) {
+            keys.push(key);
+        }
+    }
+
+
+    // Cantidad de celdas térmicas procesadas
+    this.lastThermalCellCount = keys.length;
+
+    let values;
+
+    if (this.useOptimizedBuffer) {
+
+        // Reutilizar memoria entre ticks
+        if (keys.length > this.cellValues.length) {
+
+            const newCapacity = Math.max(
+                keys.length,
+                this.cellValues.length * 2
+            );
+
+            this.cellValues = new Float64Array(newCapacity);
         }
 
-        // Cambios de fase y brillo
-        for (let idx = 0; idx < keys.length; idx++) {
-            const key = keys[idx];
-            const [cx, cy] = cellFromKey(key);
-            let t = values[idx];
+        values = this.cellValues;
 
-            if (Number.isNaN(t)) {
-                // Celda vacía: ya no guarda calor. Chunk descargado: se conserva.
-                if (terrain.getLoadedCell(cx, cy) === MATERIAL.EMPTY) {
-                    temps.delete(key);
-                    terrain.cellLatent.delete(key);
-                    terrain.glowing.delete(key);
-                }
+    } else {
+
+        // Versión original para pruebas A/B
+        values = new Float64Array(keys.length);
+    }
+
+    const adds = new Map();
+
+    let neighborChecks = 0;
+
+    // -------------------------------------
+    // 1. DIFUSIÓN DEL CALOR
+    // -------------------------------------
+
+    for (let idx = 0; idx < keys.length; idx++) {
+
+        const key = keys[idx];
+        const tc = temps.get(key);
+        const [cx, cy] = cellFromKey(key);
+
+        const mat = terrain.getLoadedCell(cx, cy);
+
+       if (mat <= 0) {
+
+        this.lastSkippedThermalCells++;
+
+        if (mat === -1) {
+            // Chunk descargado: conservar su temperatura
+            this.lastUnloadedThermalCells++;
+        } else if (mat === MATERIAL.EMPTY) {
+            // Celda vacía: no realiza difusión
+            this.lastEmptyThermalCells++;
+        }
+
+        values[idx] = NaN;
+        continue;
+        }
+
+        const ec = byId[mat];
+
+        let d = (AMBIENT - tc) *
+            Math.min(1, CELL_AMBIENT * dt);
+
+        // Revisar los cuatro vecinos
+        for (const [dx, dy] of NEIGHBORS4) {
+
+            neighborChecks++;
+
+            const nm = terrain.getLoadedCell(
+                cx + dx,
+                cy + dy
+            );
+
+            if (nm <= 0) continue;
+
+            const en = byId[nm];
+
+            const nk = cellKey(
+                cx + dx,
+                cy + dy
+            );
+
+            const tn = temps.get(nk) ?? AMBIENT;
+            const diff = tn - tc;
+
+            if (diff < 0.3 && diff > -0.3) {
                 continue;
             }
 
-            const ec = byId[terrain.getLoadedCell(cx, cy)];
-            let lat = terrain.cellLatent.get(key) ?? 0;
-            let phase = null;
+            let f = K_CC *
+                Math.min(ec.cond, en.cond) * dt;
 
-            if (ec.above && t > ec.above.temp) {
-                if (!ec.above.latent) {
-                    phase = ec.above;
-                } else {
-                    lat += (t - ec.above.temp) / ec.above.latent;
-                    t = ec.above.temp;
-                    if (lat >= 1) phase = ec.above;
-                }
-            } else if (ec.below && t < ec.below.temp) {
-                if (!ec.below.latent) {
-                    phase = ec.below;
-                } else {
-                    lat += (ec.below.temp - t) / ec.below.latent;
-                    t = ec.below.temp;
-                    if (lat >= 1) phase = ec.below;
-                }
-            } else if (lat > 0) {
-                lat = Math.max(0, lat - dt * 0.3);
+            if (f > 0.12) f = 0.12;
+
+            d += f * diff;
+
+            if (!temps.has(nk)) {
+
+                adds.set(
+                    nk,
+                    (adds.get(nk) ?? 0) -
+                    f * diff * ec.cap / en.cap
+                );
             }
+        }
 
-            if (phase) {
-                const center = [(cx + 0.5) * CELL_SIZE, (cy + 0.5) * CELL_SIZE];
-                this.transformCell(cx, cy, byKey[phase.to], t);
-                this.extras(phase.extra, center[0], center[1], t);
-                if (phase.explode) this.explosions.push({ x: center[0], y: center[1], power: phase.explode });
-                continue;
-            }
+        values[idx] = tc + d;
+    }
 
-            if (lat > 0) terrain.cellLatent.set(key, lat);
-            else terrain.cellLatent.delete(key);
+    // Registrar las consultas realizadas
+    this.lastNeighborChecks = neighborChecks;
 
-            const glowing = terrain.glowing.has(key);
+    // -------------------------------------
+    // 2. APLICAR CALOR A CELDAS NUEVAS
+    // -------------------------------------
 
-            if (t > 450) {
-                terrain.tintCell(cx, cy, t);
-                terrain.glowing.add(key);
-            } else if (glowing) {
-                terrain.tintCell(cx, cy, t);
+    for (const [nk, delta] of adds) {
+
+        if (Math.abs(delta) > 0.3) {
+            temps.set(nk, AMBIENT + delta);
+        }
+    }
+
+    // -------------------------------------
+    // 3. CAMBIOS DE FASE Y BRILLO
+    // -------------------------------------
+
+    for (let idx = 0; idx < keys.length; idx++) {
+
+        const key = keys[idx];
+        const [cx, cy] = cellFromKey(key);
+
+        let t = values[idx];
+
+        if (Number.isNaN(t)) {
+
+            // Celda vacía: eliminar temperatura.
+            // Chunk descargado: conservar estado.
+            if (
+                terrain.getLoadedCell(cx, cy) === MATERIAL.EMPTY
+            ) {
+                temps.delete(key);
+                terrain.cellLatent.delete(key);
                 terrain.glowing.delete(key);
             }
 
-            if (Math.abs(t - AMBIENT) < 0.5 && lat === 0) temps.delete(key);
-            else temps.set(key, t);
+            continue;
+        }
+
+        const ec = byId[
+            terrain.getLoadedCell(cx, cy)
+        ];
+
+        let lat = terrain.cellLatent.get(key) ?? 0;
+        let phase = null;
+
+        if (ec.above && t > ec.above.temp) {
+
+            if (!ec.above.latent) {
+
+                phase = ec.above;
+
+            } else {
+
+                lat += (t - ec.above.temp) /
+                    ec.above.latent;
+
+                t = ec.above.temp;
+
+                if (lat >= 1) {
+                    phase = ec.above;
+                }
+            }
+
+        } else if (ec.below && t < ec.below.temp) {
+
+            if (!ec.below.latent) {
+
+                phase = ec.below;
+
+            } else {
+
+                lat += (ec.below.temp - t) /
+                    ec.below.latent;
+
+                t = ec.below.temp;
+
+                if (lat >= 1) {
+                    phase = ec.below;
+                }
+            }
+
+        } else if (lat > 0) {
+
+            lat = Math.max(0, lat - dt * 0.3);
+        }
+
+        // Transformar material si cambia de fase
+        if (phase) {
+
+            const center = [
+                (cx + 0.5) * CELL_SIZE,
+                (cy + 0.5) * CELL_SIZE
+            ];
+
+            this.transformCell(
+                cx,
+                cy,
+                byKey[phase.to],
+                t
+            );
+
+            this.extras(
+                phase.extra,
+                center[0],
+                center[1],
+                t
+            );
+
+            if (phase.explode) {
+
+                this.explosions.push({
+                    x: center[0],
+                    y: center[1],
+                    power: phase.explode
+                });
+            }
+
+            continue;
+        }
+
+        // Conservar calor latente
+        if (lat > 0) {
+            terrain.cellLatent.set(key, lat);
+        } else {
+            terrain.cellLatent.delete(key);
+        }
+
+        // Actualizar brillo del terreno caliente
+        const glowing = terrain.glowing.has(key);
+
+        if (t > 450) {
+
+            terrain.tintCell(cx, cy, t);
+            terrain.glowing.add(key);
+
+        } else if (glowing) {
+
+            terrain.tintCell(cx, cy, t);
+            terrain.glowing.delete(key);
+        }
+
+        // Eliminar temperaturas próximas al ambiente
+        if (Math.abs(t - AMBIENT) < 0.5 && lat === 0) {
+
+            temps.delete(key);
+
+        } else {
+
+            temps.set(key, t);
         }
     }
+}
+
 
     // =================================================================
     // HERRAMIENTAS

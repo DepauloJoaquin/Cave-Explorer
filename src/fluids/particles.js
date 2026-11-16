@@ -430,3 +430,7 @@ export function getFluidLights(playerX, playerY) {
 
     return lights.slice(0, MAX_LIGHTS);
 }
+
+export function getParticleCount() {
+    return particleCount();
+}
