@@ -41,6 +41,7 @@ import { world } from './physics/world.js';
 import { Lighting } from './lighting/lighting.js';
 
 import { Benchmark } from './debug/benchmark.js';
+import { GridOverlay } from './debug/gridOverlay.js';
 
 import {
     particleContainer,
@@ -135,6 +136,17 @@ const camera = new Camera(player.x, player.y);
 const coordsEl = document.querySelector('#coordinates');
 const chunksEl = document.querySelector('#chunk-count');
 const toolPanel = new ToolPanel(document.body);
+
+// Vista de depuración: grilla de celdas (G) y bordes de chunks (C)
+const gridOverlay = new GridOverlay(document.querySelector('#game'));
+
+toolPanel.addToggle('Grilla de celdas', 'g', (on) => {
+  gridOverlay.showCells = on;
+}, '#5cf2ff');
+
+toolPanel.addToggle('Chunks', 'c', (on) => {
+  gridOverlay.showChunks = on;
+}, '#ffc43d');
 
 let infoInterval = 0;
 let streamingInterval = 0;
@@ -416,6 +428,9 @@ app.ticker.add((ticker) => {
             player
         );
     });
+
+    // Grilla de celdas y chunks (si están activadas)
+    gridOverlay.draw(worldLayer, mouseWorld(), terrain);
 
     // -------------------------------------
     // REGISTRAR MÉTRICAS

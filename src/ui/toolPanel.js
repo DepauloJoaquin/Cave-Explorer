@@ -80,6 +80,47 @@ export class ToolPanel {
         this.select(this.active);
     }
 
+    // Agregar un botón de encendido/apagado en la sección "Vista".
+    // Sirve para cualquier opción de depuración futura.
+    //   label     texto del botón
+    //   key       tecla de atajo (ej: 'g')
+    //   onChange  función que recibe true/false
+    addToggle(label, key, onChange, color = '#5cf2ff') {
+        if (!this.viewGrid) {
+            const section = document.createElement('section');
+            section.innerHTML = '<h3>Vista</h3><div class="tool-grid"></div>';
+            this.viewGrid = section.querySelector('.tool-grid');
+
+            // La sección va primera, arriba de las herramientas
+            const groups = this.panel.querySelector('.tool-groups');
+            groups.prepend(section);
+        }
+
+        let enabled = false;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'tool-button';
+        button.title = `${label} (tecla ${key.toUpperCase()})`;
+        button.style.setProperty('--tool-color', color);
+        button.innerHTML =
+            `<span class="tool-dot">${key.toUpperCase()}</span><span>${label}</span>`;
+
+        const set = (value) => {
+            enabled = value;
+            button.classList.toggle('active', enabled);
+            onChange(enabled);
+        };
+
+        button.addEventListener('click', () => set(!enabled));
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key.toLowerCase() === key && !event.repeat) set(!enabled);
+        });
+
+        this.viewGrid.appendChild(button);
+    }
+
     toggle() {
         this.panel.classList.toggle('collapsed');
         this.panel.querySelector('.tool-collapse').textContent =
